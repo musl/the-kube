@@ -3,18 +3,24 @@
 I want a Kubernetes cluster on low-power, low cost hardware that's
 reasonably performant. The PCEngines APU2 fits the bill. I had some
 laying around. Will it k8s? Let's find out.
+
+Note, the `ignition.json` has values hard-coded for a 256GB SD card. You
+may either remove the bits that create the 10th partition and the
+`data.mount` service or re-calculate the sector start and size for that
+partition to match your card.
  
 ## Setup
 
-1. Have VirtualBox, vagrant, USB SD Card Reader
-2. `vagrant up`
-3. `vagrant halt`
-4. Enable USB support assign the usb device for your SD card reader to the VM.
-5. `vagrant up`
-6. `vagrant ssh`
-7. `lsblk` - find your SD card `<device>`
-8. `sudo ./coreos-install -d <device> -i /vagrant/ignition.json -C stable`
-10. Install the SD card and power on the APU.
+3. Have VirtualBox, vagrant, USB SD Card Reader
+1. Enable USB support and assign the usb device for your SD card reader to the VM.
+4. `vagrant up`
+7. `vagrant ssh`
+8. `sudo su -`
+9. `cd /vagrant`
+10. `make`
+11. log out of the vagrant box
+12. `vagrant halt`
+13. Install the SD card and power on the APU.
  
 ## Troubleshooting
 

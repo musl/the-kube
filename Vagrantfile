@@ -12,6 +12,9 @@ Vagrant.configure('2') do |config|
   config.vm.provision 'shell', inline: <<-SHELL
     wget https://raw.github.com/coreos/init/master/bin/coreos-install
     chmod 0755 coreos-install
+    apt-get clean
+    apt-get update
+    apt-get install -y make
   SHELL
 
   config.vm.synced_folder '.', '/vagrant', disabled: false

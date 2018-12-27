@@ -1,30 +1,13 @@
 {
-	"ignition": {
-		"version": "2.2.0",
-		"config": {}
-	},
+	"igniton": { "version": "2.3.0" },
 	"storage": {
-		"disks": [
-			{
-				"device": "/dev/sda",
-				"partitions": [
-					{
-						"label": "DATA",
-						"number": 10,
-						"start": 80738304,
-						"size": 419430400,
-						"typeGuid": "0FC63DAF-8483-4772-8E79-3D69D8477DE4"
-					}
-				]
-			}
-		],
 		"filesystems": [
 			{
+				"name": "oem",
 				"mount": {
-					"device": "/dev/sda10",
-					"label": "DATA",
+					"device": "/dev/disk/by-label/OEM",
 					"format": "ext4",
-					"wipeFilesystem": true
+					"label": "OEM"
 				}
 			}
 		],
@@ -34,31 +17,15 @@
 				"path": "/etc/hostname",
 				"mode": 420,
 				"contents": { "source": "data:,apu" }
+			},
+			{
+				"filesystem": "oem",
+				"path": "/grub.cfg",
+				"mode": 420,
+				"contents": { "source": "data:,set%20linux_append%3D%22%24linux_append%20console%3DttyS0%2C115200n8%22" }
 			}
 		]
 	},
-	"systemd": {
-		"units": [
-			{
-				"name": "sshd.service",
-				"enabled": true
-			},
-			{
-				"name": "sshd.socket",
-				"mask": true
-			},
-			{
-				"name": "docker.service",
-				"enabled": true
-			},
-			{
-				"name": "data.mount",
-				"enable": true,
-				"contents": "[Mount]\nWhat=/dev/disk/by-label/DATA\nWhere=/data\nType=ext4\n\n[Install]\nWantedBy=local-fs.target"
-			}
-		]
-	},
-	"networkd": {},
 	"passwd": {
 		"users": [
 			{
@@ -67,6 +34,13 @@
 					"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC595cHiWTMqCal7Pu9vOqFi8aEFixQkVgKvbxo5fpBARUocwEZUntKPYFbdzeDTPPXAS8txE6gpUzgbcfVaJD7JfhVxqO8ayrMe5mdt86YFKQ48JqID6C2mOwm/+j5EyOOfvIwmIUuggtDKp6PSLA0gzHQnEJjBpze4iyVDSXepLZOCai8qX49rL8++rr5t82V0AjGpEVG58n8Es+IBG61xFjYosXz0Oqo6laBEvTak+Nl2fS3Z+sGoyxa0L4DudFWYnH2SA3nzkZqmIdfxv/4rZFgSZZX28nQlOT+ZXMHDK6kVbXKifcqIpcKJZOmyStayAhDBmgSk0mrt+2ijLKV4tn80tWnWGjMg3S8ccf9cNOB4E2mO3Vs3Ri3hxB6aauC+p/SLkRcpLe1ak2LHKtqQQOk8t20zZBn7LlXhLdUedhy0KAglY4Hoq6fld+PsssUv0opcxqkiuVNvK4q+3rYweXOfrA1k4XpPZ3yv70PnVaDcJBKRKLgUsnoo2gSxYxlOM18oMeT312wtFaRl8jRhYfl8FPkyGd8nw4lUW9F5Gecxi3IJLQjgruO0+ZW4ysM0o1A9dXeDtgWml3kpSxVhmRcavG7xLxPfe7LZBSnI0XvPcaeyFkncU1onnA2LYvw735b+oT1v1HmN4v2aCCygVYK/FwMHYXb2ADi1+oZBQ== cardno:000607127116"
 				]
 			}
+		]
+	},
+	"systemd": {
+		"units": [
+			{"name": "sshd.service", "enabled": true},
+			{"name": "sshd.socket", "mask": true},
+			{"name": "docker.service", "enabled": true}
 		]
 	}
 }
