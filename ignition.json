@@ -33,7 +33,7 @@
         "device": "/dev/sda",
         "partitions": [
           {
-            "label": "DATA",
+            "label": "DOCKER",
             "number": 10,
             "start": 39845888,
             "typeGuid": "0fc63daf-8483-4772-8e79-3d69d8477de4"
@@ -59,10 +59,9 @@
         "mount": {
           "device": "/dev/sda10",
           "format": "ext4",
-          "label": "DATA",
+          "label": "DOCKER",
           "wipeFilesystem": true
-        },
-        "name": "data"
+        }
       }
     ]
   },
@@ -81,9 +80,9 @@
         "name": "docker.service"
       },
       {
-        "contents": "[Mount]\nWhat=/dev/disk/by-label/DATA\nWhere=/data\nType=ext4\n\n[Install]\nWantedBy=local-fs.target\n",
+        "contents": "[Mount]\nWhat=/dev/disk/by-label/DOCKER\nWhere=/var/lib/docker\nType=ext4\n\n[Install]\nWantedBy=local-fs.target\n",
         "enabled": true,
-        "name": "data.mount"
+        "name": "var-lib-docker.mount"
       }
     ]
   }

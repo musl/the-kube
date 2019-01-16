@@ -3,16 +3,15 @@ storage:
   disks:
     - device: /dev/sda
       partitions:
-        - label: DATA
+        - label: DOCKER
           number: 10
           start: 19GiB
           type_guid: linux_filesystem_data
 
   filesystems:
-    - name: data
-      mount: 
+    - mount: 
         device: /dev/sda10
-        label: DATA
+        label: DOCKER
         format: ext4
         wipe_filesystem: true
 
@@ -31,12 +30,12 @@ systemd:
       mask: true
     - name: docker.service
       enabled: true
-    - name: data.mount
+    - name: var-lib-docker.mount
       enabled: true
       contents: |
         [Mount]
-        What=/dev/disk/by-label/DATA
-        Where=/data
+        What=/dev/disk/by-label/DOCKER
+        Where=/var/lib/docker
         Type=ext4
 
         [Install]
