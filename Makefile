@@ -2,9 +2,15 @@ DISK:=/dev/sda
 IMG := coreos_production_image.bin.bz2
 URL := https://stable.release.core-os.net/amd64-usr/current/$(IMG)
 
-.PHONY: all cfg confirm wipe write
+.PHONY: all cfg clean confirm wipe write
 
-all: $(IMG) wipe write cfg
+all: clean_ignition ignition.json wipe write cfg
+
+clean: clean_ignition
+	rm -f $(IMG) ct
+
+clean_ignition:
+	rm -f ignition.json 
 
 confirm:
 	@echo "Here are your block devices:"
@@ -22,8 +28,14 @@ wipe: confirm
 
 $(IMG):
 	curl -kLO "$(URL)"
+
+ct:
+	./fetch-ct.sh
+
+ignition.json: ct
+	./ct -pretty -strict -in-file config.yaml -out-file ignition.json
 	
-write:
+write: $(IMG) ignition.json
 	./coreos-install -d $(DISK) -i ignition.json -f $(IMG)
 
 cfg:

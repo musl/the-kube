@@ -1,0 +1,73 @@
+---
+storage:
+  disks:
+    - device: /dev/sda
+      partitions:
+        - label: DATA
+          number: 10
+          start: 19GiB
+          type_guid: linux_filesystem_data
+
+  filesystems:
+    - name: data
+      mount: 
+        device: /dev/sda10
+        label: DATA
+        format: ext4
+        wipe_filesystem: true
+
+  files:
+    - filesystem: root
+      path: /etc/hostname
+      mode: 420
+      contents:
+        inline: apu
+
+systemd:
+  units:
+    - name: sshd.service
+      enabled: true
+    - name: sshd.socket
+      mask: true
+    - name: docker.service
+      enabled: true
+    - name: data.mount
+      enabled: true
+      contents: |
+        [Mount]
+        What=/dev/disk/by-label/DATA
+        Where=/data
+        Type=ext4
+
+        [Install]
+        WantedBy=local-fs.target
+
+networkd:
+  units:
+    - name: 10-dhcp.network
+      contents: |
+        [Match]
+        Name=enp1s0
+
+        [Network]
+        DHCP=yes
+        LinkLocalAddressing=no
+        IPv6AcceptRA=no
+
+    - name: 20-static.network
+      contents: |
+        [Match]
+        Name=!enp1s0
+
+        [Network]
+        DHCP=no
+        LinkLocalAddressing=no
+        IPv6AcceptRA=no
+
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC595cHiWTMqCal7Pu9vOqFi8aEFixQkVgKvbxo5fpBARUocwEZUntKPYFbdzeDTPPXAS8txE6gpUzgbcfVaJD7JfhVxqO8ayrMe5mdt86YFKQ48JqID6C2mOwm/+j5EyOOfvIwmIUuggtDKp6PSLA0gzHQnEJjBpze4iyVDSXepLZOCai8qX49rL8++rr5t82V0AjGpEVG58n8Es+IBG61xFjYosXz0Oqo6laBEvTak+Nl2fS3Z+sGoyxa0L4DudFWYnH2SA3nzkZqmIdfxv/4rZFgSZZX28nQlOT+ZXMHDK6kVbXKifcqIpcKJZOmyStayAhDBmgSk0mrt+2ijLKV4tn80tWnWGjMg3S8ccf9cNOB4E2mO3Vs3Ri3hxB6aauC+p/SLkRcpLe1ak2LHKtqQQOk8t20zZBn7LlXhLdUedhy0KAglY4Hoq6fld+PsssUv0opcxqkiuVNvK4q+3rYweXOfrA1k4XpPZ3yv70PnVaDcJBKRKLgUsnoo2gSxYxlOM18oMeT312wtFaRl8jRhYfl8FPkyGd8nw4lUW9F5Gecxi3IJLQjgruO0+ZW4ysM0o1A9dXeDtgWml3kpSxVhmRcavG7xLxPfe7LZBSnI0XvPcaeyFkncU1onnA2LYvw735b+oT1v1HmN4v2aCCygVYK/FwMHYXb2ADi1+oZBQ== cardno:000607127116"
+        - "ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBACtQrzkg3YPbhljEhvdrEBPPhP/Yr4b8Zaaq480lHDfN4GTeuQi4XEjwbmqvmAOe+RQ8zDhhVqFiryLG029fF1GcgGYYJrqX7W0tW3kYOS/pvBMYDjLazM7UTCf0XZBOKVPqygmBYApHulF7bzoY+xa8Dl8z8iHac84jozdm1m6SdOnzA== mike@juliana"
+
