@@ -6,40 +6,79 @@ storage:
         - label: DOCKER
           number: 10
           start: 19GiB
-          type_guid: linux_filesystem_data
-
-  filesystems:
-    - mount: 
-        device: /dev/sda10
-        label: DOCKER
-        format: ext4
-        wipe_filesystem: true
+          type_guid: E6D6D379-F507-44C2-A23C-238F2A3DF928 # LVM
 
   files:
     - filesystem: root
       path: /etc/hostname
       mode: 420
       contents:
-        inline: apu
+        inline: kubby-1
+
+    - path: /etc/lvm/profile/docker-thinpool.profile
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+          activation {
+              thin_pool_autoextend_threshold=80
+              thin_pool_autoextend_percent=20
+          }
+
+    - path: /opt/thinpool-init
+      filesystem: root
+      mode: 0755
+      contents:
+        inline: |
+          #!/bin/bash -ex
+          /usr/sbin/wipefs -af /dev/sda10
+          /usr/sbin/pvcreate -y /dev/sda10
+          /usr/sbin/vgcreate -y docker /dev/sda10
+          /usr/sbin/lvcreate -y --wipesignatures y -n thinpool docker -l 95%VG
+          /usr/sbin/lvcreate -y --wipesignatures y -n thinpoolmeta docker -l 1%VG
+          /usr/sbin/lvconvert -y --zero n -c 512K --thinpool docker/thinpool --poolmetadata docker/thinpoolmeta
+          /usr/sbin/lvchange --metadataprofile docker-thinpool docker/thinpool
+          /usr/sbin/lvs -o+seg_monitor
+          /usr/bin/rm -rfv /var/lib/docker
 
 systemd:
   units:
     - name: sshd.service
-      enabled: true
+      enable: true
+
     - name: sshd.socket
       mask: true
-    - name: docker.service
-      enabled: true
-    - name: var-lib-docker.mount
-      enabled: true
+
+    - name: lvm2-lvmetad.service
+      enable: true
+
+    - name: lvm2-lvmetad.socket
+      enable: true
+
+    - name: thinpool-init.service
+      enable: true
       contents: |
-        [Mount]
-        What=/dev/disk/by-label/DOCKER
-        Where=/var/lib/docker
-        Type=ext4
+        [Unit]
+        Description=Configure device for docker direct-lvm storage driver
+        ConditionFirstBoot=yes
+        Before=docker.service
+        After=lvm2-lvmetad.service
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=-+/opt/thinpool-init
 
         [Install]
-        WantedBy=local-fs.target
+        RequiredBy=docker.service
+
+docker:
+  flags:
+    - --storage-driver=devicemapper
+    - --storage-opt dm.fs=xfs
+    - --storage-opt=dm.thinpooldev=/dev/mapper/docker-thinpool
+    - --storage-opt=dm.use_deferred_removal=true
+    - --storage-opt=dm.use_deferred_deletion=true
 
 networkd:
   units:

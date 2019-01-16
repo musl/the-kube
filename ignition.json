@@ -36,7 +36,7 @@
             "label": "DOCKER",
             "number": 10,
             "start": 39845888,
-            "typeGuid": "0fc63daf-8483-4772-8e79-3d69d8477de4"
+            "typeGuid": "E6D6D379-F507-44C2-A23C-238F2A3DF928"
           }
         ]
       }
@@ -48,27 +48,49 @@
         "path": "/etc/hostname",
         "user": {},
         "contents": {
-          "source": "data:,apu",
+          "source": "data:,kubby-1",
           "verification": {}
         },
         "mode": 420
-      }
-    ],
-    "filesystems": [
+      },
       {
-        "mount": {
-          "device": "/dev/sda10",
-          "format": "ext4",
-          "label": "DOCKER",
-          "wipeFilesystem": true
-        }
+        "filesystem": "root",
+        "group": {},
+        "path": "/etc/lvm/profile/docker-thinpool.profile",
+        "user": {},
+        "contents": {
+          "source": "data:,activation%20%7B%0A%20%20%20%20thin_pool_autoextend_threshold%3D80%0A%20%20%20%20thin_pool_autoextend_percent%3D20%0A%7D%0A",
+          "verification": {}
+        },
+        "mode": 420
+      },
+      {
+        "filesystem": "root",
+        "group": {},
+        "path": "/opt/thinpool-init",
+        "user": {},
+        "contents": {
+          "source": "data:,%23!%2Fbin%2Fbash%20-ex%0A%2Fusr%2Fsbin%2Fwipefs%20-af%20%2Fdev%2Fsda10%0A%2Fusr%2Fsbin%2Fpvcreate%20-y%20%2Fdev%2Fsda10%0A%2Fusr%2Fsbin%2Fvgcreate%20-y%20docker%20%2Fdev%2Fsda10%0A%2Fusr%2Fsbin%2Flvcreate%20-y%20--wipesignatures%20y%20-n%20thinpool%20docker%20-l%2095%25VG%0A%2Fusr%2Fsbin%2Flvcreate%20-y%20--wipesignatures%20y%20-n%20thinpoolmeta%20docker%20-l%201%25VG%0A%2Fusr%2Fsbin%2Flvconvert%20-y%20--zero%20n%20-c%20512K%20--thinpool%20docker%2Fthinpool%20--poolmetadata%20docker%2Fthinpoolmeta%0A%2Fusr%2Fsbin%2Flvchange%20--metadataprofile%20docker-thinpool%20docker%2Fthinpool%0A%2Fusr%2Fsbin%2Flvs%20-o%2Bseg_monitor%0A%2Fusr%2Fbin%2Frm%20-rfv%20%2Fvar%2Flib%2Fdocker%0A",
+          "verification": {}
+        },
+        "mode": 493
       }
     ]
   },
   "systemd": {
     "units": [
       {
-        "enabled": true,
+        "dropins": [
+          {
+            "contents": "[Service]\nEnvironment=\"DOCKER_OPTS=--storage-driver=devicemapper --storage-opt dm.fs=xfs --storage-opt=dm.thinpooldev=/dev/mapper/docker-thinpool --storage-opt=dm.use_deferred_removal=true --storage-opt=dm.use_deferred_deletion=true\"",
+            "name": "20-clct-docker.conf"
+          }
+        ],
+        "enable": true,
+        "name": "docker.service"
+      },
+      {
+        "enable": true,
         "name": "sshd.service"
       },
       {
@@ -76,13 +98,17 @@
         "name": "sshd.socket"
       },
       {
-        "enabled": true,
-        "name": "docker.service"
+        "enable": true,
+        "name": "lvm2-lvmetad.service"
       },
       {
-        "contents": "[Mount]\nWhat=/dev/disk/by-label/DOCKER\nWhere=/var/lib/docker\nType=ext4\n\n[Install]\nWantedBy=local-fs.target\n",
-        "enabled": true,
-        "name": "var-lib-docker.mount"
+        "enable": true,
+        "name": "lvm2-lvmetad.socket"
+      },
+      {
+        "contents": "[Unit]\nDescription=Configure device for docker direct-lvm storage driver\nConditionFirstBoot=yes\nBefore=docker.service\nAfter=lvm2-lvmetad.service\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\nExecStart=-+/opt/thinpool-init\n\n[Install]\nRequiredBy=docker.service\n",
+        "enable": true,
+        "name": "thinpool-init.service"
       }
     ]
   }
