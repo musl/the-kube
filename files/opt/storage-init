@@ -1,0 +1,10 @@
+#!/bin/bash -ex
+
+/usr/sbin/wipefs -af /dev/disk/by-partlabel/K8S
+/usr/sbin/pvcreate -y /dev/disk/by-partlabel/K8S
+/usr/sbin/vgcreate -y k8s /dev/disk/by-partlabel/K8S
+/usr/sbin/lvcreate -y --wipesignatures y -n tp k8s -l 95%VG
+/usr/sbin/lvcreate -y --wipesignatures y -n tp-meta k8s -l 1%VG
+/usr/sbin/lvconvert -y --zero n -c 512K --thinpool k8s/tp --poolmetadata k8s/tp-meta
+/usr/sbin/lvchange --metadataprofile k8s-thinpool k8s/tp
+/usr/sbin/lvs -o+seg_monitor

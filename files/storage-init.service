@@ -1,0 +1,13 @@
+[Unit]
+Description=Configure Local Storage
+ConditionFirstBoot=yes
+Before=docker.service
+After=lvm2-lvmetad.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=-+/opt/storage-init
+
+[Install]
+RequiredBy=docker.service

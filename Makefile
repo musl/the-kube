@@ -1,16 +1,17 @@
-DISK:=/dev/sda
+DISK:=/dev/sdc
+OEM_PARTITION:=$(DISK)6
 IMG := coreos_production_image.bin.bz2
 URL := https://stable.release.core-os.net/amd64-usr/current/$(IMG)
 
-.PHONY: all cfg clean confirm wipe write
+.PHONY: all oem clean confirm wipe write
 
-all: clean_ignition ignition.json wipe write cfg
-
-clean: clean_ignition
-	rm -f $(IMG) ct
+all: clean_ignition ignition.json wipe write oem
 
 clean_ignition:
 	rm -f ignition.json 
+
+clean: clean_ignition
+	rm -f $(IMG) ct k8s.tar.bz2
 
 confirm:
 	@echo "Here are your block devices:"
@@ -33,14 +34,17 @@ ct:
 	./fetch-ct.sh
 
 ignition.json: ct
-	./ct -pretty -strict -in-file config.yaml -out-file ignition.json
+	./ct -pretty -strict --files-dir files -in-file config.yaml -out-file ignition.json
 	
 write: $(IMG) ignition.json
 	./coreos-install -d $(DISK) -i ignition.json -f $(IMG)
 
-cfg:
+k8s.tar.bz2:
+	./fetch-k8s.sh
+
+oem: k8s.tar.bz2
 	mkdir -p mnt
-	mount $(DISK)6 mnt
-	cp grub.cfg mnt/grub.cfg
+	mount $(OEM_PARTITION) mnt
+	cp grub.cfg k8s.tar.bz2 mnt
 	umount mnt
 

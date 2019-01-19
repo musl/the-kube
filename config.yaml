@@ -1,45 +1,57 @@
 ---
 storage:
   disks:
-    - device: /dev/sda
+    - device: /dev/disk/by-path/pci-0000:00:11.0-ata-1
+      wipe_table: true
       partitions:
         - label: DOCKER
-          number: 10
-          start: 19GiB
+          size: 116GiB
+          type_guid: 0FC63DAF-8483-4772-8E79-3D69D8477DE4 # Linux Filesystem Data
+
+        - label: K8S
+          size: 116GiB
           type_guid: E6D6D379-F507-44C2-A23C-238F2A3DF928 # LVM
 
-  files:
-    - filesystem: root
-      path: /etc/hostname
-      mode: 420
-      contents:
-        inline: kubby-1
+  filesystems:
+    - name: docker
+      mount:
+        device: /dev/disk/by-partlabel/DOCKER
+        label: docker
+        wipe_filesystem: true
+        format: xfs
+        options:
+          - -n ftype=1
 
-    - path: /etc/lvm/profile/docker-thinpool.profile
+  files:
+    - path: /etc/hostname
+      filesystem: root
+      mode: 0420
+      contents:
+        inline: kube-1
+
+    - path: /etc/lvm/profile/k8s-thinpool.profile
       filesystem: root
       mode: 0644
       contents:
-        inline: |
-          activation {
-              thin_pool_autoextend_threshold=80
-              thin_pool_autoextend_percent=20
-          }
+        local: etc/lvm/profile/k8s-thinpool.profile
 
-    - path: /opt/thinpool-init
+    - path: /opt/storage-init
       filesystem: root
       mode: 0755
       contents:
-        inline: |
-          #!/bin/bash -ex
-          /usr/sbin/wipefs -af /dev/sda10
-          /usr/sbin/pvcreate -y /dev/sda10
-          /usr/sbin/vgcreate -y docker /dev/sda10
-          /usr/sbin/lvcreate -y --wipesignatures y -n thinpool docker -l 95%VG
-          /usr/sbin/lvcreate -y --wipesignatures y -n thinpoolmeta docker -l 1%VG
-          /usr/sbin/lvconvert -y --zero n -c 512K --thinpool docker/thinpool --poolmetadata docker/thinpoolmeta
-          /usr/sbin/lvchange --metadataprofile docker-thinpool docker/thinpool
-          /usr/sbin/lvs -o+seg_monitor
-          /usr/bin/rm -rfv /var/lib/docker
+        local: opt/storage-init
+
+    - path: /opt/install-k8s
+      filesystem: root
+      mode: 0755
+      contents:
+        local: opt/install-k8s
+
+    - path: /etc/sysctl.d/flannel.conf
+      filesystem: root
+      mode: 0644
+      contents:
+        local: etc/sysctl.d/flannel.conf
 
 systemd:
   units:
@@ -55,11 +67,21 @@ systemd:
     - name: lvm2-lvmetad.socket
       enable: true
 
-    - name: thinpool-init.service
+    - name: var-lib-docker.mount
+      enable: true
+      contents: |
+        [Mount]
+        What=/dev/disk/by-label/docker
+        Where=/var/lib/docker
+
+        [Install]
+        RequiredBy=docker.service
+
+    - name: storage-init.service
       enable: true
       contents: |
         [Unit]
-        Description=Configure device for docker direct-lvm storage driver
+        Description=Configure Local Storage
         ConditionFirstBoot=yes
         Before=docker.service
         After=lvm2-lvmetad.service
@@ -67,18 +89,26 @@ systemd:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=-+/opt/thinpool-init
+        ExecStart=-+/opt/storage-init
 
         [Install]
         RequiredBy=docker.service
 
-docker:
-  flags:
-    - --storage-driver=devicemapper
-    - --storage-opt dm.fs=xfs
-    - --storage-opt=dm.thinpooldev=/dev/mapper/docker-thinpool
-    - --storage-opt=dm.use_deferred_removal=true
-    - --storage-opt=dm.use_deferred_deletion=true
+    - name: install-k8s.service
+      enable: true
+      contents: |
+        [Unit]
+        Description=Install K8s
+        ConditionFirstBoot=yes
+        After=docker.service
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=-+/opt/install-k8s
+
+        [Install]
+        WantedBy=multi-user.target
 
 networkd:
   units:
@@ -92,7 +122,7 @@ networkd:
         LinkLocalAddressing=no
         IPv6AcceptRA=no
 
-    - name: 20-static.network
+    - name: 20-no-dhcp.network
       contents: |
         [Match]
         Name=!enp1s0
