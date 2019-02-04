@@ -4,7 +4,7 @@ CRICTL_VERSION := v1.11.1
 CT_VER := v0.6.1
 CHANNEL := stable
 
-.PHONY: all oem clean confirm wipe write
+.PHONY: all clean
 
 all: pxe
 
@@ -49,5 +49,7 @@ coreos_production_pxe.vmlinuz:
 	curl -kLO https://$(CHANNEL).release.core-os.net/amd64-usr/current/coreos_production_pxe.vmlinuz
 
 pxe: oem.cpio.gz coreos_production_pxe.vmlinuz coreos_production_pxe_image.cpio.gz
+ifndef as
+
 	@echo TODO: make this push this code somewhere.
 
