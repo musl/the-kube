@@ -21,6 +21,12 @@ storage:
         format: ext4
 
   files:
+    - path: /etc/hostname
+      filesystem: root
+      mode: 0420
+      contents:
+        inline: HOSTNAME
+
     - path: /etc/lvm/profile/k8s-thinpool.profile
       filesystem: root
       mode: 0644
@@ -134,7 +140,7 @@ networkd:
 
         [Network]
         DHCP=yes
-        SendHostname=no
+        SendHostname=yes
         UseDNS=yes
         UseNTP=yes
         UseMTU=no

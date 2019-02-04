@@ -1,7 +1,11 @@
-.vagrant
-mnt
+build
 *.bin
 *.bz2
 *.swp
 *.log
+*.gz
+*.vmlinuz
 ct
+kubeadm
+kubectl
+kubelet

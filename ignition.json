@@ -7,7 +7,7 @@
   "networkd": {
     "units": [
       {
-        "contents": "[Match]\nName=enp1s0\n\n[Network]\nDHCP=yes\nLinkLocalAddressing=no\nIPv6AcceptRA=no\n",
+        "contents": "[Match]\nName=enp1s0\n\n[Link]\nMTUBytes=9000\n\n[Network]\nDHCP=yes\nSendHostname=no\nUseDNS=yes\nUseNTP=yes\nUseMTU=no\nUseDomains=yes\nUseRoutes=yes\nUseTimezone=no\nLinkLocalAddressing=no\nIPv6AcceptRA=no\n",
         "name": "10-dhcp.network"
       },
       {
@@ -50,17 +50,6 @@
       {
         "filesystem": "root",
         "group": {},
-        "path": "/etc/hostname",
-        "user": {},
-        "contents": {
-          "source": "data:,kube-1",
-          "verification": {}
-        },
-        "mode": 272
-      },
-      {
-        "filesystem": "root",
-        "group": {},
         "path": "/etc/lvm/profile/k8s-thinpool.profile",
         "user": {},
         "contents": {
@@ -94,10 +83,32 @@
       {
         "filesystem": "root",
         "group": {},
+        "path": "/etc/modules-load.d/br_netfilter.conf",
+        "user": {},
+        "contents": {
+          "source": "data:,br_netfilter%0A",
+          "verification": {}
+        },
+        "mode": 420
+      },
+      {
+        "filesystem": "root",
+        "group": {},
         "path": "/etc/sysctl.d/flannel.conf",
         "user": {},
         "contents": {
           "source": "data:,net.bridge.bridge-nf-call-iptables%3D1%0A",
+          "verification": {}
+        },
+        "mode": 420
+      },
+      {
+        "filesystem": "root",
+        "group": {},
+        "path": "/etc/resolved.conf",
+        "user": {},
+        "contents": {
+          "source": "data:,%5BResolve%5D%0ADomains%3Dkube.net%0A",
           "verification": {}
         },
         "mode": 420
@@ -107,11 +118,8 @@
       {
         "mount": {
           "device": "/dev/disk/by-partlabel/DOCKER",
-          "format": "xfs",
+          "format": "ext4",
           "label": "docker",
-          "options": [
-            "-n ftype=1"
-          ],
           "wipeFilesystem": true
         },
         "name": "docker"
@@ -130,6 +138,14 @@
       },
       {
         "enable": true,
+        "name": "ntpd.service"
+      },
+      {
+        "enable": true,
+        "name": "docker.service"
+      },
+      {
+        "enable": true,
         "name": "lvm2-lvmetad.service"
       },
       {
@@ -137,7 +153,7 @@
         "name": "lvm2-lvmetad.socket"
       },
       {
-        "contents": "[Mount]\nWhat=/dev/disk/by-label/docker\nWhere=/var/lib/docker\n\n[Install]\nRequiredBy=docker.service\n",
+        "contents": "[Mount]\nWhat=/dev/disk/by-label/docker\nWhere=/var/lib/docker\nType=ext4\n\n[Install]\nRequiredBy=docker.service\n",
         "enable": true,
         "name": "var-lib-docker.mount"
       },
