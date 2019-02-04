@@ -1,10 +1,11 @@
-build
 *.bin
 *.bz2
-*.swp
-*.log
+*.cpio
 *.gz
+*.log
+*.swp
 *.vmlinuz
+build
 ct
 kubeadm
 kubectl

@@ -18,11 +18,8 @@ ct:
 	curl -L https://github.com/coreos/container-linux-config-transpiler/releases/download/$(CT_VER)/ct-$(CT_VER)-x86_64-apple-darwin -o ct
 	chmod 0755 ct
 
-config.ign: ct config.yaml
+%.ign: ct %.yaml
 	./ct -pretty -strict --files-dir files -in-file config.yaml -out-file $@
-	
-install.ign: ct install.yaml
-	./ct -pretty -strict --files-dir files -in-file install.yaml -out-file $@
 	
 k8s.tar.bz2:
 	mkdir -p build/opt/cni/bin build/opt/bin build/etc/systemd/system/kubelet.service.d
@@ -37,7 +34,10 @@ k8s.tar.bz2:
 	tar cjf k8s.tar.bz2 -C build .
 	rm -fr build
 
-tftproot/oem.cpio.gz: config.ign install.ign k8s.tar.bz2
+coreos_production_image.bin.bz2:
+	curl -kLO https://$(CHANNEL).release.core-os.net/amd64-usr/current/$@
+
+tftproot/oem.cpio.gz: config.ign install.ign install-coreos.sh k8s.tar.bz2 coreos_production_image.bin.bz2
 	mkdir -p usr/share/oem
 	cp $^ usr/share/oem/
 	find usr | cpio -o -H newc -O tftproot/oem.cpio
