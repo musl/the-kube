@@ -34,19 +34,28 @@ k8s.tar.bz2:
 	tar cjf k8s.tar.bz2 -C build .
 	rm -fr build
 
-oem.cpio.gz: ignition.json k8s.tar.bz2
+tftproot/oem.cpio.gz: ignition.json k8s.tar.bz2
 	mkdir -p usr/share/oem
 	cp ignition.json usr/share/oem/config.ign
 	cp k8s.tar.bz2 usr/share/oem/
-	find usr | cpio -o -H newc -O oem.cpio
+	find usr | cpio -o -H newc -O tftproot/oem.cpio
 	rm -fr usr
-	gzip oem.cpio
+	rm $@
+	gzip tftproot/oem.cpio
 
-coreos_production_pxe_image.cpio.gz:
-	curl -kLO https://$(CHANNEL).release.core-os.net/amd64-usr/current/coreos_production_pxe_image.cpio.gz
+tftproot/coreos_production_pxe_image.cpio.gz:
+	curl -kL https://$(CHANNEL).release.core-os.net/amd64-usr/current/coreos_production_pxe_image.cpio.gz -o $@
 
-coreos_production_pxe.vmlinuz:
-	curl -kLO https://$(CHANNEL).release.core-os.net/amd64-usr/current/coreos_production_pxe.vmlinuz
+tftproot/coreos_production_pxe.vmlinuz:
+	curl -kL https://$(CHANNEL).release.core-os.net/amd64-usr/current/coreos_production_pxe.vmlinuz -o $@
 
-pxe: coreos_production_pxe.vmlinuz coreos_production_pxe_image.cpio.gz oem.cpio.gz 
+pxe: tftproot/coreos_production_pxe.vmlinuz tftproot/coreos_production_pxe_image.cpio.gz tftproot/oem.cpio.gz 
+ifndef remote
+	@echo "Please define a remote varabile."
+	@echo "For example: \n\tmake pxe remote=user@host:/some/tftproot/"
+	@echo
+	@echo "Hint: make sure to include the trailing slash for rsync."
+	@false
+endif
+	rsync -aPve ssh tftproot/* $(remote)
 
