@@ -1,23 +1,18 @@
 ---
-storage:
-  disks:
-    - device: /dev/mmcblk0
-      wipe_table: true
-
 systemd:
   units:
-    - name: install-coreos.service
+    - name: oem-install.service
       enable: true
       contents: |
         [Unit]
-        Description=Install CoreOS
+        Description=Run OEM Install Script Once
         ConditionFirstBoot=yes
         After=local-fs.target
 
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=/usr/share/oem/install-coreos.sh
+        ExecStart=-/usr/share/oem/oem-install.sh
 
         [Install]
         RequiredBy=multi-user.target

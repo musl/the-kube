@@ -27,20 +27,13 @@
       }
     ]
   },
-  "storage": {
-    "disks": [
-      {
-        "device": "/dev/mmcblk0",
-        "wipeTable": true
-      }
-    ]
-  },
+  "storage": {},
   "systemd": {
     "units": [
       {
-        "contents": "[Unit]\nDescription=Install CoreOS\nConditionFirstBoot=yes\nAfter=local-fs.target\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\nExecStart=/usr/share/oem/install-coreos.sh\n\n[Install]\nRequiredBy=multi-user.target\n",
+        "contents": "[Unit]\nDescription=Run OEM Install Script Once\nConditionFirstBoot=yes\nAfter=local-fs.target\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\nExecStart=-/usr/share/oem/oem-install.sh\n\n[Install]\nRequiredBy=multi-user.target\n",
         "enable": true,
-        "name": "install-coreos.service"
+        "name": "oem-install.service"
       }
     ]
   }

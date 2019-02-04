@@ -37,7 +37,7 @@ k8s.tar.bz2:
 coreos_production_image.bin.bz2:
 	curl -kLO https://$(CHANNEL).release.core-os.net/amd64-usr/current/$@
 
-tftproot/oem.cpio.gz: config.ign install.ign install-coreos.sh k8s.tar.bz2 coreos_production_image.bin.bz2
+tftproot/oem.cpio.gz: config.ign install.ign oem-install.sh k8s.tar.bz2 coreos_production_image.bin.bz2
 	mkdir -p usr/share/oem
 	cp $^ usr/share/oem/
 	find usr | cpio -o -H newc -O tftproot/oem.cpio
