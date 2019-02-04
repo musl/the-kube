@@ -48,8 +48,5 @@ coreos_production_pxe_image.cpio.gz:
 coreos_production_pxe.vmlinuz:
 	curl -kLO https://$(CHANNEL).release.core-os.net/amd64-usr/current/coreos_production_pxe.vmlinuz
 
-pxe: oem.cpio.gz coreos_production_pxe.vmlinuz coreos_production_pxe_image.cpio.gz
-ifndef as
-
-	@echo TODO: make this push this code somewhere.
+pxe: coreos_production_pxe.vmlinuz coreos_production_pxe_image.cpio.gz oem.cpio.gz 
 
