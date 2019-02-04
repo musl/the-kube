@@ -1,0 +1,163 @@
+---
+storage:
+  disks:
+    - device: /dev/disk/by-path/pci-0000:00:11.0-ata-1
+      wipe_table: true
+      partitions:
+        - label: DOCKER
+          size: 116GiB
+          type_guid: 0FC63DAF-8483-4772-8E79-3D69D8477DE4 # Linux Filesystem Data
+
+        - label: K8S
+          size: 116GiB
+          type_guid: E6D6D379-F507-44C2-A23C-238F2A3DF928 # LVM
+
+  filesystems:
+    - name: docker
+      mount:
+        device: /dev/disk/by-partlabel/DOCKER
+        label: docker
+        wipe_filesystem: true
+        format: ext4
+
+  files:
+    - path: /etc/lvm/profile/k8s-thinpool.profile
+      filesystem: root
+      mode: 0644
+      contents:
+        local: etc/lvm/profile/k8s-thinpool.profile
+
+    - path: /opt/storage-init
+      filesystem: root
+      mode: 0755
+      contents:
+        local: opt/storage-init
+
+    - path: /opt/install-k8s
+      filesystem: root
+      mode: 0755
+      contents:
+        local: opt/install-k8s
+
+    - path: /etc/modules-load.d/br_netfilter.conf
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+          br_netfilter
+
+    - path: /etc/sysctl.d/flannel.conf
+      filesystem: root
+      mode: 0644
+      contents:
+        local: etc/sysctl.d/flannel.conf
+
+    - path: /etc/resolved.conf
+      filesystem: root
+      mode: 0644
+      contents:
+        local: etc/resolved.conf
+
+systemd:
+  units:
+    - name: sshd.service
+      enable: true
+
+    - name: sshd.socket
+      mask: true
+
+    - name: ntpd.service
+      enable: true
+
+    - name: docker.service
+      enable: true
+
+    - name: lvm2-lvmetad.service
+      enable: true
+
+    - name: lvm2-lvmetad.socket
+      enable: true
+
+    - name: var-lib-docker.mount
+      enable: true
+      contents: |
+        [Mount]
+        What=/dev/disk/by-label/docker
+        Where=/var/lib/docker
+        Type=ext4
+
+        [Install]
+        RequiredBy=docker.service
+
+    - name: storage-init.service
+      enable: true
+      contents: |
+        [Unit]
+        Description=Configure Local Storage
+        ConditionFirstBoot=yes
+        Before=docker.service
+        After=lvm2-lvmetad.service
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=-+/opt/storage-init
+
+        [Install]
+        RequiredBy=docker.service
+
+    - name: install-k8s.service
+      enable: true
+      contents: |
+        [Unit]
+        Description=Install K8s
+        ConditionFirstBoot=yes
+        After=docker.service
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=-+/opt/install-k8s
+
+        [Install]
+        WantedBy=multi-user.target
+
+networkd:
+  units:
+    - name: 10-dhcp.network
+      contents: |
+        [Match]
+        Name=enp1s0
+
+        [Link]
+        MTUBytes=9000
+
+        [Network]
+        DHCP=yes
+        SendHostname=no
+        UseDNS=yes
+        UseNTP=yes
+        UseMTU=no
+        UseDomains=yes
+        UseRoutes=yes
+        UseTimezone=no
+        LinkLocalAddressing=no
+        IPv6AcceptRA=no
+
+    - name: 20-no-dhcp.network
+      contents: |
+        [Match]
+        Name=!enp1s0
+
+        [Network]
+        DHCP=no
+        LinkLocalAddressing=no
+        IPv6AcceptRA=no
+
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC595cHiWTMqCal7Pu9vOqFi8aEFixQkVgKvbxo5fpBARUocwEZUntKPYFbdzeDTPPXAS8txE6gpUzgbcfVaJD7JfhVxqO8ayrMe5mdt86YFKQ48JqID6C2mOwm/+j5EyOOfvIwmIUuggtDKp6PSLA0gzHQnEJjBpze4iyVDSXepLZOCai8qX49rL8++rr5t82V0AjGpEVG58n8Es+IBG61xFjYosXz0Oqo6laBEvTak+Nl2fS3Z+sGoyxa0L4DudFWYnH2SA3nzkZqmIdfxv/4rZFgSZZX28nQlOT+ZXMHDK6kVbXKifcqIpcKJZOmyStayAhDBmgSk0mrt+2ijLKV4tn80tWnWGjMg3S8ccf9cNOB4E2mO3Vs3Ri3hxB6aauC+p/SLkRcpLe1ak2LHKtqQQOk8t20zZBn7LlXhLdUedhy0KAglY4Hoq6fld+PsssUv0opcxqkiuVNvK4q+3rYweXOfrA1k4XpPZ3yv70PnVaDcJBKRKLgUsnoo2gSxYxlOM18oMeT312wtFaRl8jRhYfl8FPkyGd8nw4lUW9F5Gecxi3IJLQjgruO0+ZW4ysM0o1A9dXeDtgWml3kpSxVhmRcavG7xLxPfe7LZBSnI0XvPcaeyFkncU1onnA2LYvw735b+oT1v1HmN4v2aCCygVYK/FwMHYXb2ADi1+oZBQ== cardno:000607127116"
+        - "ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBACtQrzkg3YPbhljEhvdrEBPPhP/Yr4b8Zaaq480lHDfN4GTeuQi4XEjwbmqvmAOe+RQ8zDhhVqFiryLG029fF1GcgGYYJrqX7W0tW3kYOS/pvBMYDjLazM7UTCf0XZBOKVPqygmBYApHulF7bzoY+xa8Dl8z8iHac84jozdm1m6SdOnzA== mike@juliana"
+

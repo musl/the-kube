@@ -12,14 +12,17 @@ deps:
 	brew install bzip2 xz
 
 clean:
-	rm -f ignition.json pxe oem.cpio.gz ct k8s.tar.bz2
+	rm -f *.ign pxe oem.cpio.gz ct k8s.tar.bz2
 
 ct:
 	curl -L https://github.com/coreos/container-linux-config-transpiler/releases/download/$(CT_VER)/ct-$(CT_VER)-x86_64-apple-darwin -o ct
 	chmod 0755 ct
 
-ignition.json: ct
-	./ct -pretty -strict --files-dir files -in-file config.yaml -out-file ignition.json
+config.ign: ct config.yaml
+	./ct -pretty -strict --files-dir files -in-file config.yaml -out-file $@
+	
+install.ign: ct install.yaml
+	./ct -pretty -strict --files-dir files -in-file install.yaml -out-file $@
 	
 k8s.tar.bz2:
 	mkdir -p build/opt/cni/bin build/opt/bin build/etc/systemd/system/kubelet.service.d
@@ -34,22 +37,22 @@ k8s.tar.bz2:
 	tar cjf k8s.tar.bz2 -C build .
 	rm -fr build
 
-tftproot/oem.cpio.gz: ignition.json k8s.tar.bz2
+tftproot/oem.cpio.gz: config.ign install.ign k8s.tar.bz2
 	mkdir -p usr/share/oem
-	cp ignition.json usr/share/oem/config.ign
-	cp k8s.tar.bz2 usr/share/oem/
+	cp $^ usr/share/oem/
 	find usr | cpio -o -H newc -O tftproot/oem.cpio
 	rm -fr usr
-	rm $@
+	rm -f $@
 	gzip tftproot/oem.cpio
 
-tftproot/coreos_production_pxe_image.cpio.gz:
+# Note the `.` between `_pxe` and `image`. Sigh.
+tftproot/coreos_production_pxe.image.cpio.gz:
 	curl -kL https://$(CHANNEL).release.core-os.net/amd64-usr/current/coreos_production_pxe_image.cpio.gz -o $@
 
 tftproot/coreos_production_pxe.vmlinuz:
 	curl -kL https://$(CHANNEL).release.core-os.net/amd64-usr/current/coreos_production_pxe.vmlinuz -o $@
 
-pxe: tftproot/coreos_production_pxe.vmlinuz tftproot/coreos_production_pxe_image.cpio.gz tftproot/oem.cpio.gz 
+pxe: tftproot/coreos_production_pxe.vmlinuz tftproot/coreos_production_pxe.image.cpio.gz tftproot/oem.cpio.gz 
 ifndef remote
 	@echo "Please define a remote varabile."
 	@echo "For example: \n\tmake pxe remote=user@host:/some/tftproot/"
