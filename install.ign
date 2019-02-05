@@ -61,10 +61,10 @@
       {
         "filesystem": "root",
         "group": {},
-        "path": "/opt/bin/storage-init",
+        "path": "/opt/bin/storage",
         "user": {},
         "contents": {
-          "source": "data:,%23!%2Fbin%2Fbash%20-ex%0A%0A%2Fusr%2Fsbin%2Fwipefs%20-af%20%2Fdev%2Fdisk%2Fby-partlabel%2FK8S%0A%2Fusr%2Fsbin%2Fpvcreate%20-y%20%2Fdev%2Fdisk%2Fby-partlabel%2FK8S%0A%2Fusr%2Fsbin%2Fvgcreate%20-y%20k8s%20%2Fdev%2Fdisk%2Fby-partlabel%2FK8S%0A%2Fusr%2Fsbin%2Flvcreate%20-y%20--wipesignatures%20y%20-n%20tp%20k8s%20-l%2095%25VG%0A%2Fusr%2Fsbin%2Flvcreate%20-y%20--wipesignatures%20y%20-n%20tp-meta%20k8s%20-l%201%25VG%0A%2Fusr%2Fsbin%2Flvconvert%20-y%20--zero%20n%20-c%20512K%20--thinpool%20k8s%2Ftp%20--poolmetadata%20k8s%2Ftp-meta%0A%2Fusr%2Fsbin%2Flvchange%20--metadataprofile%20k8s-thinpool%20k8s%2Ftp%0A%2Fusr%2Fsbin%2Flvs%20-o%2Bseg_monitor%0A",
+          "source": "data:,%23!%2Fbin%2Fbash%20-ex%0A%0Adevice%3D%2Fdev%2Fdisk%2Fby-partlabel%2FK8S%0Aname%3Dk8s%0A%0Acheck()%20%7B%0A%09if%20%5B%20-L%20%2Fdev%2F%24name%2Ftp%20%5D%20%3B%20then%0A%09%09%09exit%200%0A%09fi%0A%7D%0A%0Acreate()%20%7B%0A%09pvcreate%20-y%20-ff%20%24device%0A%09vgcreate%20-y%20-ff%20%24name%20%24device%0A%09lvcreate%20-y%20--wipesignatures%20y%20-n%20tp%20%24name%20-l%2095%25VG%0A%09lvcreate%20-y%20--wipesignatures%20y%20-n%20tp-meta%20%24name%20-l%201%25VG%0A%09lvconvert%20-y%20--zero%20n%20-c%20512K%20--thinpool%20%24name%2Ftp%20--poolmetadata%20%24name%2Ftp-meta%0A%09lvchange%20--metadataprofile%20%24name-thinpool%20%24name%2Ftp%0A%09lvs%20-o%2Bseg_monitor%0A%7D%0A%0Adestroy()%20%7B%0A%09lvremove%20-f%20%24name%20%7C%7C%20true%0A%09pvremove%20-f%20%24device%20%7C%7C%20true%0A%09dmsetup%20remove%20-f%20%24name-tp_tmeta%20%7C%7C%20true%0A%09dmsetup%20remove%20-f%20%24name-tp_tdata%20%7C%7C%20true%0A%09dmsetup%20remove%20-f%20%24name-tp%20%7C%7C%20true%0A%09wipefs%20-af%20%24device%0A%7D%0A%0Acase%20%241%20in%0Acreate)%0A%09create%0A%09%3B%3B%0Adestroy)%0A%09destroy%0A%09%3B%3B%0Aignition)%0A%09check%0A%09destroy%0A%09create%0A%09%3B%3B%0A*)%0A%09echo%20%22Usage%3A%20%240%20%3Ccreate%7Cdestroy%7Cinit%3E%22%0A%09%3B%3B%0Aesac%0A",
           "verification": {}
         },
         "mode": 493
@@ -151,7 +151,7 @@
         "name": "var-lib-docker.mount"
       },
       {
-        "contents": "[Unit]\nDescription=Configure Local Storage\nConditionFirstBoot=yes\nBefore=docker.service\nAfter=lvm2-lvmetad.service\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\nExecStart=-+/opt/bin/storage-init\n\n[Install]\nRequiredBy=docker.service\n",
+        "contents": "[Unit]\nDescription=Configure Local Storage\nConditionFirstBoot=yes\nBefore=docker.service\nAfter=lvm2-lvmetad.service\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\nExecStart=-+/opt/bin/storage init\n\n[Install]\nRequiredBy=docker.service\n",
         "enable": true,
         "name": "storage-init.service"
       }
