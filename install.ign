@@ -72,17 +72,6 @@
       {
         "filesystem": "root",
         "group": {},
-        "path": "/opt/bin/install-k8s",
-        "user": {},
-        "contents": {
-          "source": "data:,%23!%2Fbin%2Fbash%20-ex%0A%0Acurl%20-O%20http%3A%2F%2Fzero.kube.net%3A8081%2Fcoreos_production_image.bin.bz2%20%7C%20tar%20-xjC%20%2F%0A%0Asystemctl%20daemon-reload%0Asystemctl%20enable%20kubelet.service%0Asystemctl%20start%20kubelet.service%0A%0A",
-          "verification": {}
-        },
-        "mode": 493
-      },
-      {
-        "filesystem": "root",
-        "group": {},
         "path": "/etc/modules-load.d/br_netfilter.conf",
         "user": {},
         "contents": {
@@ -146,6 +135,10 @@
       },
       {
         "enable": true,
+        "name": "kubelet.service"
+      },
+      {
+        "enable": true,
         "name": "lvm2-lvmetad.service"
       },
       {
@@ -161,11 +154,6 @@
         "contents": "[Unit]\nDescription=Configure Local Storage\nConditionFirstBoot=yes\nBefore=docker.service\nAfter=lvm2-lvmetad.service\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\nExecStart=-+/opt/bin/storage-init\n\n[Install]\nRequiredBy=docker.service\n",
         "enable": true,
         "name": "storage-init.service"
-      },
-      {
-        "contents": "[Unit]\nDescription=Install K8s\nConditionFirstBoot=yes\nAfter=docker.service\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\nExecStart=-+/opt/bin/install-k8s\n\n[Install]\nWantedBy=multi-user.target\n",
-        "enable": true,
-        "name": "install-k8s.service"
       }
     ]
   }

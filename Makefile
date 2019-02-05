@@ -4,8 +4,6 @@ CRICTL_VERSION := v1.11.1
 CT_VER := v0.6.1
 CHANNEL := stable
 
-ASSETS := pxe/pxe.ign
-ASSETS += pxe/install.ign
 ASSETS += pxe/k8s.tar.bz2
 ASSETS += pxe/coreos_production_pxe.vmlinuz
 ASSETS += pxe/coreos_production_pxe.image.cpio.gz
@@ -14,6 +12,7 @@ ASSETS += pxe/oem.cpio.gz
 ASSETS += pxe/pxelinux.0
 ASSETS += pxe/pxelinux.cfg/default
 ASSETS += pxe/ldlinux.c32
+ASSETS += pxe/oem.cpio.gz
 
 .PHONY: all bootfiles clean
 
@@ -29,9 +28,6 @@ bin/ct:
 	curl -L https://github.com/coreos/container-linux-config-transpiler/releases/download/$(CT_VER)/ct-$(CT_VER)-x86_64-apple-darwin -o $@
 	chmod 0755 ct
 
-pxe/%.ign: %.yaml bin/ct 
-	./bin/ct -pretty -strict --files-dir files -in-file $< -out-file $@
-	
 pxe/k8s.tar.bz2:
 	mkdir -p build/opt/cni/bin build/opt/bin build/etc/systemd/system/kubelet.service.d
 	curl -L "https://github.com/containernetworking/plugins/releases/download/$(CNI_VERSION)/cni-plugins-amd64-$(CNI_VERSION).tgz" | tar -xzC build/opt/cni/bin
@@ -56,14 +52,25 @@ pxe/coreos_production_image.bin.bz2:
 	curl -kL https://$(CHANNEL).release.core-os.net/amd64-usr/current/coreos_production_image.bin.bz2 -o $@
 
 pxe/pxelinux.0: syslinux/pxelinux.0
-	cp $^ $@
+	cp -f $^ $@
 
 pxe/ldlinux.c32: syslinux/ldlinux.c32
-	cp $^ $@
+	cp -f $^ $@
 
 pxe/pxelinux.cfg/default: syslinux/pxelinux.cfg/default
 	mkdir -p pxe/pxelinux.cfg
-	cp $^ syslinux/pxelinux.cfg/default
+	cp -f $^ pxe/pxelinux.cfg/default
+
+%.ign: %.yaml bin/ct 
+	./bin/ct -pretty -strict --files-dir files -in-file $< -out-file $@
+	
+pxe/oem.cpio.gz: config.ign install.ign install.sh
+	mkdir -p usr/share/oem
+	cp $^ usr/share/oem/
+	find usr | cpio -o -H newc -O pxe/oem.cpio
+	rm -fr usr
+	rm -f $@
+	gzip pxe/oem.cpio
 
 deploy: $(ASSETS)
 ifndef remote
@@ -73,5 +80,5 @@ ifndef remote
 	@echo "Hint: make sure to include the trailing slash for rsync."
 	@false
 endif
-	rsync -aPve ssh pxe/ $(remote)
+	rsync -aPve ssh --delete pxe/ $(remote)
 

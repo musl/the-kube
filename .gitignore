@@ -6,7 +6,5 @@
 *.swp
 *.vmlinuz
 build
-ct
-kubeadm
-kubectl
-kubelet
+pxe
+bin/ct

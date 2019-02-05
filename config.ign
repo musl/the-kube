@@ -27,25 +27,11 @@
       }
     ]
   },
-  "storage": {
-    "files": [
-      {
-        "filesystem": "root",
-        "group": {},
-        "path": "/tmp/install.sh",
-        "user": {},
-        "contents": {
-          "source": "data:,%23!%2Fbin%2Fsh%20-ex%0A%0Acd%20%2Ftmp%0A%0Acurl%20-O%20http%3A%2F%2Fzero.kube.net%3A8081%2Fcoreos_production_image.bin.bz2%0Acoreos-install%20-d%20%2Fdev%2Fmmcblk0%20-f%20%2Fusr%2Fshare%2Foem%2Fimage.tar.gz%20-i%20%2Fusr%2Fshare%2Foem%2Finstall.ign%20-f%20coreos_production_image.bin.bz2%0A%0Amount%20%2Fdev%2Fmmcblk0p9%20%2Fmnt%0Ahostname%20-s%20%3E%20%2Fmnt%2Fetc%2Fhostname%0Aumount%20%2Fmnt%0A%0Areboot%0A",
-          "verification": {}
-        },
-        "mode": 493
-      }
-    ]
-  },
+  "storage": {},
   "systemd": {
     "units": [
       {
-        "contents": "[Unit]\nDescription=Run CoreOS Install Script Once\nConditionFirstBoot=yes\nAfter=local-fs.target\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\nExecStart=/tmp/install.sh\n\n[Install]\nRequiredBy=multi-user.target\n",
+        "contents": "[Unit]\nDescription=Run CoreOS Install Script Once\nConditionFirstBoot=yes\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\nWorkingDirectory=/tmp\nExecStart=/usr/share/oem/install.sh\n\n[Install]\nRequiredBy=multi-user.target\n",
         "enable": true,
         "name": "install.service"
       }

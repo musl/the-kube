@@ -1,0 +1,46 @@
+#!/bin/bash -ex
+
+device=/dev/disk/by-partlabel/K8S
+name=k8s
+
+check() {
+	if [ -L /dev/$name/tp ] ; then
+			exit 0
+	fi
+}
+
+create() {
+	pvcreate -y -ff $device
+	vgcreate -y -ff $name $device
+	lvcreate -y --wipesignatures y -n tp $name -l 95%VG
+	lvcreate -y --wipesignatures y -n tp-meta $name -l 1%VG
+	lvconvert -y --zero n -c 512K --thinpool $name/tp --poolmetadata $name/tp-meta
+	lvchange --metadataprofile $name-thinpool $name/tp
+	lvs -o+seg_monitor
+}
+
+destroy() {
+	lvremove -f $name || true
+	pvremove -f $device || true
+	dmsetup remove -f $name-tp_tmeta || true
+	dmsetup remove -f $name-tp_tdata || true
+	dmsetup remove -f $name-tp || true
+	wipefs -af $device
+}
+
+case $1 in
+create)
+	create
+	;;
+destroy)
+	destroy
+	;;
+ignition)
+	check
+	destroy
+	create
+	;;
+*)
+	echo "Usage: $0 <create|destroy|init>"
+	;;
+esac

@@ -1,8 +1,0 @@
-#!/bin/bash -ex
-
-curl -O http://zero.kube.net:8081/coreos_production_image.bin.bz2 | tar -xjC /
-
-systemctl daemon-reload
-systemctl enable kubelet.service
-systemctl start kubelet.service
-
