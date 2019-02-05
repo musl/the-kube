@@ -6,16 +6,16 @@ CHANNEL := stable
 
 ASSETS := pxe/pxe.ign
 ASSETS += pxe/install.ign
-ASSETS += pxe/pxelinux.0
-ASSETS += pxe/pxelinux.cfg/default
-ASSETS += pxe/ldlinux.c32
 ASSETS += pxe/k8s.tar.bz2
 ASSETS += pxe/coreos_production_pxe.vmlinuz
 ASSETS += pxe/coreos_production_pxe.image.cpio.gz
 ASSETS += pxe/coreos_production_image.bin.bz2
 ASSETS += pxe/oem.cpio.gz
+ASSETS += pxe/pxelinux.0
+ASSETS += pxe/pxelinux.cfg/default
+ASSETS += pxe/ldlinux.c32
 
-.PHONY: all clean
+.PHONY: all bootfiles clean
 
 all: $(ASSETS)
 
@@ -32,16 +32,6 @@ bin/ct:
 pxe/%.ign: %.yaml bin/ct 
 	./bin/ct -pretty -strict --files-dir files -in-file $< -out-file $@
 	
-pxe/pxelinux.0: syslinux/pxelinux.0
-	cp $^ $@
-
-pxe/pxelinux.cfg/default: syslinux/pxelinux.cfg/default
-	mkdir -p pxe/pxelinux.cfg
-	cp $^ $@
-
-pxe/ldlinux.c32: syslinux/ldlinux.c32
-	cp $^ $@
-
 pxe/k8s.tar.bz2:
 	mkdir -p build/opt/cni/bin build/opt/bin build/etc/systemd/system/kubelet.service.d
 	curl -L "https://github.com/containernetworking/plugins/releases/download/$(CNI_VERSION)/cni-plugins-amd64-$(CNI_VERSION).tgz" | tar -xzC build/opt/cni/bin
@@ -65,6 +55,16 @@ pxe/coreos_production_pxe.vmlinuz:
 pxe/coreos_production_image.bin.bz2:
 	curl -kL https://$(CHANNEL).release.core-os.net/amd64-usr/current/coreos_production_image.bin.bz2 -o $@
 
+pxe/pxelinux.0: syslinux/pxelinux.0
+	cp $^ $@
+
+pxe/ldlinux.c32: syslinux/ldlinux.c32
+	cp $^ $@
+
+pxe/pxelinux.cfg/default: syslinux/pxelinux.cfg/default
+	mkdir -p pxe/pxelinux.cfg
+	cp $^ syslinux/pxelinux.cfg/default
+
 deploy: $(ASSETS)
 ifndef remote
 	@echo "Please define a remote varabile."
@@ -73,5 +73,5 @@ ifndef remote
 	@echo "Hint: make sure to include the trailing slash for rsync."
 	@false
 endif
-	rsync -aPve ssh $^ $(remote)
+	rsync -aPve ssh pxe/ $(remote)
 
