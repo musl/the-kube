@@ -20,7 +20,7 @@ systemd:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=-/tmp/install.sh
+        ExecStart=/tmp/install.sh
 
         [Install]
         RequiredBy=multi-user.target
