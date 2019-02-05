@@ -27,17 +27,17 @@ storage:
       contents:
         local: etc/lvm/profile/k8s-thinpool.profile
 
-    - path: /opt/storage-init
+    - path: /opt/bin/storage-init
       filesystem: root
       mode: 0755
       contents:
-        local: opt/storage-init
+        local: opt/bin/storage-init
 
-    - path: /opt/install-k8s
+    - path: /opt/bin/install-k8s
       filesystem: root
       mode: 0755
       contents:
-        local: opt/install-k8s
+        local: opt/bin/install-k8s
 
     - path: /etc/modules-load.d/br_netfilter.conf
       filesystem: root
@@ -101,7 +101,7 @@ systemd:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=-+/opt/storage-init
+        ExecStart=-+/opt/bin/storage-init
 
         [Install]
         RequiredBy=docker.service
@@ -117,7 +117,7 @@ systemd:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=-+/opt/install-k8s
+        ExecStart=-+/opt/bin/install-k8s
 
         [Install]
         WantedBy=multi-user.target

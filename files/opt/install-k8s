@@ -1,4 +1,0 @@
-#!/bin/bash -ex
-tar -C / -xjf /usr/share/oem/k8s.tar.bz2
-systemctl daemon-reload
-systemctl enable kubelet.service && systemctl start kubelet.service

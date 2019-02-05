@@ -1,18 +1,26 @@
 ---
+storage:
+  files:
+    - path: /tmp/install.sh
+      filesystem: root
+      mode: 0755
+      contents:
+        local: install.sh
+
 systemd:
   units:
-    - name: oem-install.service
+    - name: install.service
       enable: true
       contents: |
         [Unit]
-        Description=Run OEM Install Script Once
+        Description=Run CoreOS Install Script Once
         ConditionFirstBoot=yes
         After=local-fs.target
 
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=-/usr/share/oem/oem-install.sh
+        ExecStart=-/tmp/install.sh
 
         [Install]
         RequiredBy=multi-user.target

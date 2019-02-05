@@ -4,24 +4,45 @@ CRICTL_VERSION := v1.11.1
 CT_VER := v0.6.1
 CHANNEL := stable
 
+ASSETS := pxe/pxe.ign
+ASSETS += pxe/install.ign
+ASSETS += pxe/pxelinux.0
+ASSETS += pxe/pxelinux.cfg/default
+ASSETS += pxe/ldlinux.c32
+ASSETS += pxe/k8s.tar.bz2
+ASSETS += pxe/coreos_production_pxe.vmlinuz
+ASSETS += pxe/coreos_production_pxe.image.cpio.gz
+ASSETS += pxe/coreos_production_image.bin.bz2
+ASSETS += pxe/oem.cpio.gz
+
 .PHONY: all clean
 
-all: pxe
+all: $(ASSETS)
 
 deps:
 	brew install bzip2 xz
 
 clean:
-	rm -f *.ign pxe oem.cpio.gz ct k8s.tar.bz2
+	rm -fr bin/ct pxe
 
-ct:
-	curl -L https://github.com/coreos/container-linux-config-transpiler/releases/download/$(CT_VER)/ct-$(CT_VER)-x86_64-apple-darwin -o ct
+bin/ct:
+	curl -L https://github.com/coreos/container-linux-config-transpiler/releases/download/$(CT_VER)/ct-$(CT_VER)-x86_64-apple-darwin -o $@
 	chmod 0755 ct
 
-%.ign: ct %.yaml
-	./ct -pretty -strict --files-dir files -in-file config.yaml -out-file $@
+pxe/%.ign: %.yaml bin/ct 
+	./bin/ct -pretty -strict --files-dir files -in-file $< -out-file $@
 	
-k8s.tar.bz2:
+pxe/pxelinux.0: syslinux/pxelinux.0
+	cp $^ $@
+
+pxe/pxelinux.cfg/default: syslinux/pxelinux.cfg/default
+	mkdir -p pxe/pxelinux.cfg
+	cp $^ $@
+
+pxe/ldlinux.c32: syslinux/ldlinux.c32
+	cp $^ $@
+
+pxe/k8s.tar.bz2:
 	mkdir -p build/opt/cni/bin build/opt/bin build/etc/systemd/system/kubelet.service.d
 	curl -L "https://github.com/containernetworking/plugins/releases/download/$(CNI_VERSION)/cni-plugins-amd64-$(CNI_VERSION).tgz" | tar -xzC build/opt/cni/bin
 	curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/$(CRICTL_VERSION)/crictl-$(CRICTL_VERSION)-linux-amd64.tar.gz" | tar -xzC build/opt/bin
@@ -31,34 +52,26 @@ k8s.tar.bz2:
 	curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/$(RELEASE)/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > build/etc/systemd/system/kubelet.service
 	curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/$(RELEASE)/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > build/etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 	chmod +x build/opt/bin/* build/opt/cni/bin/*
-	tar cjf k8s.tar.bz2 -C build .
+	tar cjf pxe/k8s.tar.bz2 -C build .
 	rm -fr build
 
-coreos_production_image.bin.bz2:
-	curl -kLO https://$(CHANNEL).release.core-os.net/amd64-usr/current/$@
-
-tftproot/oem.cpio.gz: config.ign install.ign oem-install.sh k8s.tar.bz2 coreos_production_image.bin.bz2
-	mkdir -p usr/share/oem
-	cp $^ usr/share/oem/
-	find usr | cpio -o -H newc -O tftproot/oem.cpio
-	rm -fr usr
-	rm -f $@
-	gzip tftproot/oem.cpio
-
 # Note the `.` between `_pxe` and `image`. Sigh.
-tftproot/coreos_production_pxe.image.cpio.gz:
+pxe/coreos_production_pxe.image.cpio.gz:
 	curl -kL https://$(CHANNEL).release.core-os.net/amd64-usr/current/coreos_production_pxe_image.cpio.gz -o $@
 
-tftproot/coreos_production_pxe.vmlinuz:
+pxe/coreos_production_pxe.vmlinuz:
 	curl -kL https://$(CHANNEL).release.core-os.net/amd64-usr/current/coreos_production_pxe.vmlinuz -o $@
 
-pxe: tftproot/coreos_production_pxe.vmlinuz tftproot/coreos_production_pxe.image.cpio.gz tftproot/oem.cpio.gz 
+pxe/coreos_production_image.bin.bz2:
+	curl -kL https://$(CHANNEL).release.core-os.net/amd64-usr/current/coreos_production_image.bin.bz2 -o $@
+
+deploy: $(ASSETS)
 ifndef remote
 	@echo "Please define a remote varabile."
-	@echo "For example: \n\tmake pxe remote=user@host:/some/tftproot/"
+	@echo "For example: \n\tmake pxe remote=user@host:/some/pxe/"
 	@echo
 	@echo "Hint: make sure to include the trailing slash for rsync."
 	@false
 endif
-	rsync -aPve ssh tftproot/* $(remote)
+	rsync -aPve ssh $^ $(remote)
 
