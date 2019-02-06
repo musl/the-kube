@@ -28,7 +28,7 @@ cube that, in my opinion, warrants the pun.
 - 1 Freebsd gateway/proxy/firewall Node
 - 3+ CoreOS Container Linux Nodes
 
-## How to Use
+## What I Did and You Can Too
 1. setup freebsd on an APU
 2. install dnsmasq, nginx, and haproxy on the freebsd box
 3. configure dnsmasq, nginx, haproxy, pf, and the system with the
