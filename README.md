@@ -20,6 +20,10 @@ cube that, in my opinion, warrants the pun.
 ## Prerequisites
 - 4+ APU1/2 boards from PCEngines (or, really any computer with a serial
 	console)
+- SD cards installed in each APU. Any size > 8 GB will do. Docker images
+	will be stored on mSATA disk. Speaking of which...
+- mSATA disks installed in each APU. If they're not 250GiB, youll need
+	to edit `install.yaml` to reflect that.
 - FreeBSD installation image on a USB stick
 - network cables and any other hardware that pleases you
 - an internet connection
@@ -27,6 +31,18 @@ cube that, in my opinion, warrants the pun.
 ## Node Allocation
 - 1 Freebsd gateway/proxy/firewall Node
 - 3+ CoreOS Container Linux Nodes
+
+## Features
+- Two-phase PXE install to put CoreOS Container Linux on local disk.
+- Config transpilation and validation. Edit the yaml, get well-formed,
+	validated JSON.
+- LVM Thinpool on each node for playing around with local persistent
+	volume claims and LVM provisioners in K8s
+- dedicated volume for docker images, configs, and container
+	filesystems.
+- DHCP is the athority for hostnames, addresses and the like. This may
+	not be a "feature" but until I write or pull in some fabric, and
+	inventory system, this will do.	
 
 ## What I Did and You Can Too
 1. setup freebsd on an APU
@@ -54,3 +70,18 @@ cube that, in my opinion, warrants the pun.
 		nodes, `kubectl get nodes` should show 3+ nodes in the `Ready` state.
 17. Deploy stuff. Have fun. Break things. Fix things. Change things.
  
+## Stuff I Want To Do
+- Write or find a load balancer that connects to the VXLAN and can
+	dynamically exposes deployed services. I tried this with traefik but
+	had issues getting the vxlan interface in FreeBSD to talk to the
+	nodes.
+- Use a VPN (wireguard) or SSH (autossh/mosh) to automatically keep up a
+	reverse proxy to a public host over which SSH and deployed services
+	are accessible.
+- Get LVM provisioning working with k8s so I can play around with
+	smoothing out running stateful services like databases completely
+	automatically in K8s.
+- Take advantage of the GPIO pins in each APU and make a robot that runs K8s.
+- Improve the bootstrapping process so it's not 17 steps.
+- Get feedback from folks so this gets cooler, simpler, and more
+	awesome.
