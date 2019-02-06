@@ -1,12 +1,21 @@
-# CoreOS Container Linux on a PCEngines APU
+# The Kube
 
 I want a Kubernetes cluster on low-power, low cost hardware that's
 reasonably performant. The PCEngines APU2 fits the bill. I had some
-laying around.
+laying around. 
 
 This repo is by no means a best practice, good practice, or in any way
 meant to be production-grade. This is a hacked-up repo full of tinkered
 things.
+
+Really, the only thing the APUs need is a serial cable and one kernel
+flag to make sure the serial console gets setup.
+
+This repo is called `The Kube` because I stacked all of the nodes. Their
+aluminum cases made a rough rectangular prism that's close enough to a
+cube that, in my opinion, warrants the pun.
+
+![The Kube](images/the-kube.jpg)
 
 ## Prerequisites
 - 4+ APU1/2 boards from PCEngines (or, really any computer with a serial
