@@ -85,3 +85,10 @@ cube that, in my opinion, warrants the pun.
 - Improve the bootstrapping process so it's not 17 steps.
 - Get feedback from folks so this gets cooler, simpler, and more
 	awesome.
+
+## Licensing
+I've included the MIT license for anything I wrote. For anything else,
+see the respective product it came from. None of this is for sale or
+intended to make a profit. If something is mis-licensed, let me know and
+I'll fix it.
+
