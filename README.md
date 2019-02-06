@@ -15,7 +15,7 @@ This repo is called `The Kube` because I stacked all of the nodes. Their
 aluminum cases made a rough rectangular prism that's close enough to a
 cube that, in my opinion, warrants the pun.
 
-![The Kube](images/the-kube.jpg)
+![The Kube](images/the-kube.jpeg)
 
 ## Prerequisites
 - 4+ APU1/2 boards from PCEngines (or, really any computer with a serial
