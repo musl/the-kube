@@ -1,0 +1,11 @@
+h1.greeting {
+	background-color: #000;
+	color: #e500ff;
+	padding: 0.5em 0.75em;
+	margin: 1em !important;
+
+	box-shadow: 5px 10px #888888;
+
+	transition: color 1s ease;
+	transition: transform 1s ease;
+}

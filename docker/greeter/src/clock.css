@@ -1,0 +1,12 @@
+.clock {
+	text-align: center;
+	background-color: #fff;
+	padding: 0.25em 1em;
+	margin: 1em;
+
+	-webkit-border-radius: 9px;
+	-moz-border-radius: 9px;
+	border-radius: 9px;
+
+	transition: filter 2s ease;
+}
