@@ -2,7 +2,11 @@
 
 I want a Kubernetes cluster on low-power, low cost hardware that's
 reasonably performant. The PCEngines APU2 fits the bill. I had some
-laying around. Will it k8s? Let's find out.
+laying around.
+
+This repo is by no means a best practice, good practice, or in any way
+meant to be production-grade. This is a hacked-up repo full of tinkered
+things.
 
 ## Prerequisites
 - 4+ APU1/2 boards from PCEngines (or, really any computer with a serial
@@ -40,3 +44,4 @@ laying around. Will it k8s? Let's find out.
 16. In a minute or two, once the flannel daemonset is up on all of the
 		nodes, `kubectl get nodes` should show 3+ nodes in the `Ready` state.
 17. Deploy stuff. Have fun. Break things. Fix things. Change things.
+ 
