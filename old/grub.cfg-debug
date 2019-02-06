@@ -1,1 +1,0 @@
-set linux_append="console=ttyS0,115200n8 systemd.journald.max_level_console=debug"
