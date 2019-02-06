@@ -43,7 +43,7 @@ spec:
   rules:
     - http:
         paths:
-          - path: /greeter
+          - path: /greeter/
             backend:
               serviceName: greeter
               servicePort: web
