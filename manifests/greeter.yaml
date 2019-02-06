@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: helloworld
-        image: musl/greeter:latest
+        image: docker.io/musl/greeter:v1
         ports:
         - containerPort: 80
 
